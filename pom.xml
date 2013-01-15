@@ -21,9 +21,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>7</version>
+    <groupId>com.mapr</groupId>
+    <artifactId>mapr-root</artifactId>
+    <version>1.0</version>
   </parent>
 
   <groupId>org.apache.whirr</groupId>
@@ -42,8 +42,8 @@
     <module>core</module>
     <module>examples</module>
     <module>services/cassandra</module>
-    <module>services/cdh</module>
-    <module>services/cdh-oldtests</module>
+    <!-- module>services/cdh</module -->
+    <!-- module>services/cdh-oldtests</module-->
     <module>services/ganglia</module>
     <module>services/hadoop</module>
     <module>services/yarn</module>

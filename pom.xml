@@ -435,6 +435,10 @@
             <exclude>**/.settings/**</exclude>
             <exclude>**/.checkstyle</exclude>
             <exclude>**/target/**</exclude>
+            <exclude>**/mapr-recipes/**</exclude>
+            <exclude>src/main/java/org/apache/whirr/service/mapr/**</exclude>
+            <exclude>src/main/resources/META-INF/services/**</exclude>
+            <exclude>services/mapr/**/**</exclude>
             <exclude>src/site/resources/images/whirr-logo.ai</exclude>
             <!-- binary -->
           </excludes>

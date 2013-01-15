@@ -1,13 +1,10 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.Cluster;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.ComputeServiceContextBuilder;
-import org.apache.whirr.service.RolePredicates;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,18 +19,18 @@ public class MapRHbaseRegionServerClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRHbaseMasterClusterActionHandler.class);
 
-  public static final String HbaseRegionServerRole = "mapr-hbase-regionserver";
+  public static final String HBASE_REGIONSERVER_ROLE = "mapr-hbase-regionserver";
   private boolean configuredFirewall = false;
 
   @Override
-  public String getRole() { return HbaseRegionServerRole; }
+  public String getRole() { return HBASE_REGIONSERVER_ROLE; }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event)
           throws IOException, InterruptedException {
     LOG.info("HbaseRegionServerHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, HbaseRegionServerRole);
+    MapRCommon.addCommonActions(this, event, HBASE_REGIONSERVER_ROLE);
 
     LOG.info("HbaseRegionServerHandler: beforeBootstrap(): End");
   }
@@ -47,8 +44,6 @@ public class MapRHbaseRegionServerClusterActionHandler
 
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
-    ComputeServiceContext computeServiceContext =
-            ComputeServiceContextBuilder.build(clusterSpec);
 
     if (! configuredFirewall) {
       configuredFirewall = true;
@@ -56,7 +51,7 @@ public class MapRHbaseRegionServerClusterActionHandler
       // Add HBaseMaster web ui port to firewall.
       // Now add webserver to firewall settings
       Set<Cluster.Instance> hbaseRsInstances =
-            cluster.getInstancesMatching(RolePredicates.role(HbaseRegionServerRole));
+            cluster.getInstancesMatching(RolePredicates.role(HBASE_REGIONSERVER_ROLE));
 
       String hbaseRsPubServers = Joiner.on(',').join(
               MapRCommon.getPublicIps(hbaseRsInstances));
@@ -65,13 +60,6 @@ public class MapRHbaseRegionServerClusterActionHandler
           "HbaseRegionServerHandler: Authorizing firewall for HbaseMasters(s): {}",
               hbaseRsPubServers);
 
-      for (Cluster.Instance instance: hbaseRsInstances) {
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-                clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.HBASE_REGIONSERVER_WEB_PORT);
-
-        break; // add only once since we dont have target address
-      }
     }
 
     LOG.info("HbaseRegionServerHandler: beforeConfigure(): End");

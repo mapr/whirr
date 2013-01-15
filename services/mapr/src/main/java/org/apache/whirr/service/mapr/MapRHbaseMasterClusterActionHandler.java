@@ -1,13 +1,10 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.Cluster;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.ComputeServiceContextBuilder;
-import org.apache.whirr.service.RolePredicates;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,18 +19,18 @@ public class MapRHbaseMasterClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRHbaseMasterClusterActionHandler.class);
 
-  public static final String HbaseMasterRole = "mapr-hbase-master";
+  public static final String HBASE_MASTER_ROLE = "mapr-hbase-master";
   private boolean configuredFirewall = false;
 
   @Override
-  public String getRole() { return HbaseMasterRole; }
+  public String getRole() { return HBASE_MASTER_ROLE; }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event)
           throws IOException, InterruptedException {
     LOG.info("HbaseMasterHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, HbaseMasterRole);
+    MapRCommon.addCommonActions(this, event, HBASE_MASTER_ROLE);
 
     LOG.info("HbaseMasterHandler: beforeBootstrap(): End");
   }
@@ -47,8 +44,6 @@ public class MapRHbaseMasterClusterActionHandler
 
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
-    ComputeServiceContext computeServiceContext =
-            ComputeServiceContextBuilder.build(clusterSpec);
 
     if (! configuredFirewall) {
       configuredFirewall = true;
@@ -56,7 +51,7 @@ public class MapRHbaseMasterClusterActionHandler
       // Add HBaseMaster web ui port to firewall.
       // Now add webserver to firewall settings
       Set<Cluster.Instance> hbaseMasterInstances =
-            cluster.getInstancesMatching(RolePredicates.role(HbaseMasterRole));
+            cluster.getInstancesMatching(RolePredicates.role(HBASE_MASTER_ROLE));
 
       String hbaseMasterPubServers = Joiner.on(',').join(
               MapRCommon.getPublicIps(hbaseMasterInstances));
@@ -64,13 +59,6 @@ public class MapRHbaseMasterClusterActionHandler
       LOG.info("HbaseMasterHandler: Authorizing firewall for HbaseMasters(s): {}",
               hbaseMasterPubServers);
 
-      for (Cluster.Instance instance: hbaseMasterInstances) {
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-            clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.HBASE_MASTER_WEB_PORT);
-
-        break; // add only once since we dont have target address
-      }
     }
 
     LOG.info("HbaseMasterHandler: beforeConfigure(): End");

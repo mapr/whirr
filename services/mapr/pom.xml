@@ -20,13 +20,13 @@
   <parent>
     <groupId>org.apache.whirr</groupId>
     <artifactId>whirr</artifactId>
-    <version>0.4.0-incubating</version>
+    <version>0.8.0</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <groupId>org.apache.whirr</groupId>
   <artifactId>whirr-mapr</artifactId>
   <packaging>jar</packaging>
-  <version>0.4.0-incubating</version>
+  <version>0.8.0</version>
   <name>Whirr MapR</name>
   <dependencies>
     <dependency>
@@ -42,20 +42,14 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.jclouds</groupId>
-      <artifactId>jclouds-compute</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>whirr-hadoop</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.jclouds</groupId>
-      <artifactId>jclouds-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jclouds.driver</groupId>
-      <artifactId>jclouds-jsch</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jclouds.driver</groupId>
-      <artifactId>jclouds-log4j</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>whirr-zookeeper</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -91,10 +85,19 @@
       <groupId>dnsjava</groupId>
       <artifactId>dnsjava</artifactId>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>whirr-hadoop</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
+
+
+

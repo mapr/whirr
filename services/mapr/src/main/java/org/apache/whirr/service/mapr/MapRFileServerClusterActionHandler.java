@@ -1,13 +1,10 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.Cluster;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.ComputeServiceContextBuilder;
-import org.apache.whirr.service.RolePredicates;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,59 +19,43 @@ public class MapRFileServerClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRFileServerClusterActionHandler.class);
 
-  public static final String FileServerRole = "mapr-fileserver";
+  public static final String FILE_SERVER_ROLE = "mapr-fileserver";
 
   private boolean configuredFirewall = false;
 
   @Override
   public String getRole() {
-    return FileServerRole;
+    return FILE_SERVER_ROLE;
   }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event)
           throws IOException, InterruptedException {
-    LOG.info("FSHandler: beforeBootstrap(): Begin: {}", this);
 
-    MapRCommon.addCommonActions(this, event, FileServerRole);
-
-    LOG.info("FSHandler: beforeBootstrap(): End {}", this);
+    MapRCommon.addCommonActions(this, event, FILE_SERVER_ROLE);
   }
 
   @Override
   protected void beforeConfigure(ClusterActionEvent event)
           throws IOException, InterruptedException {
-    LOG.info("FSHandler: beforeConfigure(): Begin: {}", this);
 
     super.beforeConfigure(event, false); // dont add CLDB firewall settings
 
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
 
-    ComputeServiceContext computeServiceContext =
-        ComputeServiceContextBuilder.build(clusterSpec);
-
     Set<Cluster.Instance> fsInstances =
-          cluster.getInstancesMatching(RolePredicates.role(FileServerRole));
+          cluster.getInstancesMatching(RolePredicates.role(FILE_SERVER_ROLE));
 
     String fsPubServers = Joiner.on(',').join(
             MapRCommon.getPublicIps(fsInstances));
 
     if (! configuredFirewall) {
       configuredFirewall = true;
-      LOG.info("FSHandler: Authorizing firewall for fs port(s): {}: {}",
-              fsPubServers, this);
-
-      for (Cluster.Instance instance: fsInstances) {
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-                clusterSpec,
-                // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.FILESERVER_PORT);
-        break; // add only once since we dont use target address
-      }
+      LOG.info("FSHandler: Authorizing firewall for fs port(s): {}",
+              fsPubServers);
     }
 
-    LOG.info("FSHandler: beforeConfigure(): End {}", this);
   }
 
   @Override

@@ -5,12 +5,12 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import org.apache.whirr.net.DnsUtil;
-import org.apache.whirr.service.Cluster;
+import org.apache.whirr.net.FastDnsResolver;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.ClusterActionHandlerSupport;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.RolePredicates;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.apache.whirr.service.hadoop.HadoopProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +50,13 @@ public class MapRCommon {
                                  InetAddress jobtracker)
           throws IOException {
     Properties config = new Properties();
+    FastDnsResolver fdr = new FastDnsResolver();
+
     config.setProperty("hadoop.job.ugi", "root,root");
     config.setProperty("fs.default.name", String.format("maprfs://%s:%d/",
-          DnsUtil.resolveAddress(namenode.getHostAddress()), NAMENODE_PORT));
+          fdr.apply(namenode.getHostAddress()), NAMENODE_PORT));
     config.setProperty("mapred.job.tracker", String.format("%s:%d",
-            DnsUtil.resolveAddress(jobtracker.getHostAddress()), JOBTRACKER_PORT));
+            fdr.apply(jobtracker.getHostAddress()), JOBTRACKER_PORT));
     config.setProperty("hadoop.socks.server", "localhost:6666");
     config.setProperty("hadoop.rpc.socket.factory.class.default",
                           "org.apache.hadoop.net.SocksSocketFactory");
@@ -111,11 +113,12 @@ public class MapRCommon {
                                        InetAddress cldbPublicAddress) {
     File configDir = getConfigDir(clusterSpec);
     File hadoopProxyFile = new File(configDir, "hadoop-proxy.sh");
+    FastDnsResolver fdr = new FastDnsResolver();
     try {
       HadoopProxy proxy = new HadoopProxy(clusterSpec, cluster);
       String script = String.format("echo 'Running proxy to Hadoop cluster at %s. " +
           "Use Ctrl-c to quit.'\n",
-          DnsUtil.resolveAddress(cldbPublicAddress.getHostAddress()))
+          fdr.apply(cldbPublicAddress.getHostAddress()))
           + Joiner.on(" ").join(proxy.getProxyCommand(cldbPublicAddress));
       Files.write(script, hadoopProxyFile, Charsets.UTF_8);
       LOG.info("Wrote Hadoop proxy script {}", hadoopProxyFile);
@@ -181,22 +184,32 @@ public class MapRCommon {
     LOG.info("addCommonActions(): End");
   }
 
-  public static List<String> getPrivateIps(Set<Cluster.Instance> instances) {
+  public static List<String> getPrivateIps(Set<Cluster.Instance> instances) 
+    throws IOException {
     return Lists.transform(Lists.newArrayList(instances),
             new Function<Cluster.Instance, String>() {
               @Override
               public String apply(Cluster.Instance instance) {
-                return instance.getPrivateAddress().getHostAddress();
+                try {
+                  return instance.getPrivateAddress().getHostAddress();
+                } catch (IOException e) {
+                  return null;
+                }
               }
             });
   }
 
-  public static List<String> getPublicIps(Set<Cluster.Instance> instances) {
+  public static List<String> getPublicIps(Set<Cluster.Instance> instances) 
+    throws IOException {
     return Lists.transform(Lists.newArrayList(instances),
             new Function<Cluster.Instance, String>() {
               @Override
               public String apply(Cluster.Instance instance) {
+                try {
                 return instance.getPublicAddress().getHostAddress();
+                } catch (IOException e) {
+                  return null;
+                }
               }
             });
   }
@@ -220,11 +233,11 @@ public class MapRCommon {
     // Get All instances of type cldb & add it all to the url
     Set<Cluster.Instance> cldbInstances =
         cluster.getInstancesMatching(RolePredicates.role(
-                  MapRCldbClusterActionHandler.CldbRole));
+                  MapRCldbClusterActionHandler.CLDB_ROLE));
 
     Set<Cluster.Instance> zkInstances =
         cluster.getInstancesMatching(RolePredicates.role(
-                  MapRZooKeeperClusterActionHandler.ZookeeperRole));
+                  MapRZooKeeperClusterActionHandler.ZOOKEEPER_ROLE));
 
     String cldbServers=null, zkServers=null;
     if (cldbInstances != null && cldbInstances.size() > 0) {

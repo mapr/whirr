@@ -1,11 +1,13 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.*;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.whirr.Cluster;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
+import org.apache.whirr.service.ClusterActionHandlerSupport;
+import org.apache.whirr.service.ClusterActionEvent;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -19,18 +21,18 @@ public class MapRCldbClusterActionHandler extends ClusterActionHandlerSupport {
   private static final Logger LOG =
     LoggerFactory.getLogger(MapRCldbClusterActionHandler.class);
 
-  public static final String CldbRole = "mapr-cldb";
+  public static final String CLDB_ROLE = "mapr-cldb";
   private boolean configuredFirewall = false;
 
   @Override
-  public String getRole() { return CldbRole; }
+  public String getRole() { return CLDB_ROLE; }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event)
           throws IOException, InterruptedException {
     LOG.info("CLDBHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, CldbRole);
+    MapRCommon.addCommonActions(this, event, CLDB_ROLE);
 
     LOG.info("CLDBHander: beforeBootstrap(): End");
   }
@@ -49,8 +51,6 @@ public class MapRCldbClusterActionHandler extends ClusterActionHandlerSupport {
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
 
-    ComputeServiceContext computeServiceContext =
-        ComputeServiceContextBuilder.build(clusterSpec);
 
     // add configure URL
     MapRCommon.doConfigure(this, event);
@@ -62,7 +62,7 @@ public class MapRCldbClusterActionHandler extends ClusterActionHandlerSupport {
       configuredFirewall = true;
 
       Set<Cluster.Instance> cldbInstances =
-              cluster.getInstancesMatching(RolePredicates.role(CldbRole));
+              cluster.getInstancesMatching(RolePredicates.role(CLDB_ROLE));
 
       String cldbPubServers = Joiner.on(',').join(
               MapRCommon.getPublicIps(cldbInstances));
@@ -70,18 +70,6 @@ public class MapRCldbClusterActionHandler extends ClusterActionHandlerSupport {
       LOG.info("CLDBHander: Authorizing firewall for CLDB(s): {}",
               cldbPubServers);
 
-      for (Cluster.Instance instance: cldbInstances) {
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-            clusterSpec,
-            // instance.getPublicAddress().getHostAddress(),
-            MapRCommon.NAMENODE_PORT);
-
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-            clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.NAMENODE_WEB_UI_PORT);
-
-        break; // add only once since we dont have target address
-      }
     }
 
     LOG.info("CLDBHander: beforeConfig(): End");
@@ -104,7 +92,7 @@ public class MapRCldbClusterActionHandler extends ClusterActionHandlerSupport {
     long cldbIP = Long.MAX_VALUE;
 
     Set<Cluster.Instance> instances = cluster.getInstancesMatching (
-        RolePredicates.role(CldbRole));
+        RolePredicates.role(CLDB_ROLE));
     for (Cluster.Instance inst: instances) {
       InetAddress pAddr = inst.getPrivateAddress();
       long ip = MapRCommon.ipToLong(pAddr.getAddress());
@@ -117,7 +105,7 @@ public class MapRCldbClusterActionHandler extends ClusterActionHandlerSupport {
     // similarly pick a job-tracker ip.
     InetAddress jtPubAddress = null;
     instances = cluster.getInstancesMatching (
-            RolePredicates.role(MapRJobTrackerClusterActionHandler.JobTrackerRole));
+            RolePredicates.role(MapRJobTrackerClusterActionHandler.JOB_TRACKER_ROLE));
 
     long jtIP = Long.MAX_VALUE;
     for (Cluster.Instance inst: instances) {

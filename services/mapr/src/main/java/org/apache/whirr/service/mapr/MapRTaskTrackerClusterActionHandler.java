@@ -1,13 +1,10 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.Cluster;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.ComputeServiceContextBuilder;
-import org.apache.whirr.service.RolePredicates;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +19,12 @@ public class MapRTaskTrackerClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRTaskTrackerClusterActionHandler.class);
 
-  public static final String TaskTrackerRole = "mapr-tasktracker";
+  public static final String TASK_TRACKER_ROLE = "mapr-tasktracker";
   private boolean configuredFirewall = false;
 
   @Override
   public String getRole() {
-    return TaskTrackerRole;
+    return TASK_TRACKER_ROLE;
   }
 
   @Override
@@ -35,7 +32,7 @@ public class MapRTaskTrackerClusterActionHandler
           throws IOException, InterruptedException {
     LOG.info("TTHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, TaskTrackerRole);
+    MapRCommon.addCommonActions(this, event, TASK_TRACKER_ROLE);
 
     LOG.info("TTHandler: beforeBootstrap(): End");
   }
@@ -50,12 +47,10 @@ public class MapRTaskTrackerClusterActionHandler
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
 
-    ComputeServiceContext computeServiceContext =
-      ComputeServiceContextBuilder.build(clusterSpec);
 
     // for each jt Instance, authorize firewall ingress
     Set<Cluster.Instance> ttInstances =
-          cluster.getInstancesMatching(RolePredicates.role(TaskTrackerRole));
+          cluster.getInstancesMatching(RolePredicates.role(TASK_TRACKER_ROLE));
 
     String ttPubIps = Joiner.on(',').join(
             MapRCommon.getPublicIps(ttInstances));
@@ -64,13 +59,6 @@ public class MapRTaskTrackerClusterActionHandler
     if (! configuredFirewall) {
       configuredFirewall = true;
 
-      for (Cluster.Instance instance: ttInstances) {
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-            clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.TASKTRACKER_WEB_UI_PORT);
-
-        break; // add only once since we dont have target address
-      }
     }
 
     LOG.info("TTHandler: beforeConfigure(): End");

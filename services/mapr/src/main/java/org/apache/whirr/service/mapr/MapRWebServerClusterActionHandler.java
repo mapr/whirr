@@ -1,13 +1,10 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.Cluster;
+import org.apache.whirr.Cluster;
 import org.apache.whirr.service.ClusterActionEvent;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.ComputeServiceContextBuilder;
-import org.apache.whirr.service.RolePredicates;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +19,12 @@ public class MapRWebServerClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRWebServerClusterActionHandler.class);
 
-  public static final String WebServerRole = "mapr-webserver";
+  public static final String WEB_SERVER_ROLE = "mapr-webserver";
   private boolean configuredFirewall = false;
 
   @Override
   public String getRole() {
-    return WebServerRole;
+    return WEB_SERVER_ROLE;
   }
 
   @Override
@@ -35,7 +32,7 @@ public class MapRWebServerClusterActionHandler
           throws IOException, InterruptedException {
     LOG.info("WebServerHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, WebServerRole);
+    MapRCommon.addCommonActions(this, event, WEB_SERVER_ROLE);
 
     LOG.info("WebServerHandler: beforeBootstrap(): End");
   }
@@ -49,15 +46,13 @@ public class MapRWebServerClusterActionHandler
 
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
-    ComputeServiceContext computeServiceContext =
-            ComputeServiceContextBuilder.build(clusterSpec);
 
     // Now add webserver to firewall settings
     if (! configuredFirewall) {
       configuredFirewall = true;
 
       Set<Cluster.Instance> wsInstances =
-              cluster.getInstancesMatching(RolePredicates.role(WebServerRole));
+              cluster.getInstancesMatching(RolePredicates.role(WEB_SERVER_ROLE));
 
       String wsPubServers = Joiner.on(',').join(
               MapRCommon.getPublicIps(wsInstances));
@@ -65,13 +60,6 @@ public class MapRWebServerClusterActionHandler
       LOG.info("WebServerHandler: Authorizing firewall for WebServer(s): {}",
               wsPubServers);
 
-      for (Cluster.Instance instance: wsInstances) {
-        FirewallSettings.authorizeIngress (computeServiceContext, instance,
-            clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.WEB_PORT);
-
-        break; // add only once since we dont have target address
-      }
     }
 
     LOG.info("WebServerHandler: beforeConfigure(): End");

@@ -1,11 +1,13 @@
 package org.apache.whirr.service.mapr;
 
 import com.google.common.base.Joiner;
-import org.apache.whirr.service.*;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.Cluster;
+import org.apache.whirr.RolePredicates;
+import org.apache.whirr.service.ClusterActionHandlerSupport;
+import org.apache.whirr.service.ClusterActionEvent;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -21,19 +23,19 @@ public class MapRJobTrackerClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRJobTrackerClusterActionHandler.class);
 
-  public static final String JobTrackerRole = "mapr-jobtracker";
+  public static final String JOB_TRACKER_ROLE = "mapr-jobtracker";
 
   private boolean configuredFirewall = false;
 
   @Override
-  public String getRole() { return JobTrackerRole; }
+  public String getRole() { return JOB_TRACKER_ROLE; }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event)
           throws IOException, InterruptedException {
     LOG.info("JTHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, JobTrackerRole);
+    MapRCommon.addCommonActions(this, event, JOB_TRACKER_ROLE);
 
     LOG.info("JTHandler: beforeBootstrap(): End");
   }
@@ -46,14 +48,12 @@ public class MapRJobTrackerClusterActionHandler
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
 
-    ComputeServiceContext computeServiceContext =
-      ComputeServiceContextBuilder.build(clusterSpec);
 
     MapRCommon.doConfigure(this, event);
 
     // for each jt Instance, authorize firewall ingress
     Set<Cluster.Instance> jtInstances =
-          cluster.getInstancesMatching(RolePredicates.role(JobTrackerRole));
+          cluster.getInstancesMatching(RolePredicates.role(JOB_TRACKER_ROLE));
 
     String jtPubIps = Joiner.on(',').join(
             MapRCommon.getPublicIps(jtInstances));
@@ -62,17 +62,6 @@ public class MapRJobTrackerClusterActionHandler
     if (! configuredFirewall) {
       configuredFirewall = true;
 
-      for (Cluster.Instance instance: jtInstances) {
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-            clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.JOBTRACKER_PORT);
-
-        FirewallSettings.authorizeIngress(computeServiceContext, instance,
-            clusterSpec, // instance.getPublicAddress().getHostAddress(),
-                MapRCommon.JOBTRACKER_WEB_UI_PORT);
-
-        break; // add only once since we dont have target address
-      }
     }
 
     LOG.info("JTHandler: beforeConfig(): End");
@@ -93,7 +82,7 @@ public class MapRJobTrackerClusterActionHandler
     // similarly pick a job-tracker ip.
     InetAddress jtPubAddress = null;
     Set<Cluster.Instance> instances = cluster.getInstancesMatching (
-        RolePredicates.role(MapRJobTrackerClusterActionHandler.JobTrackerRole));
+        RolePredicates.role(MapRJobTrackerClusterActionHandler.JOB_TRACKER_ROLE));
 
     long jtIP = Long.MAX_VALUE;
     for (Cluster.Instance inst: instances) {
@@ -110,7 +99,7 @@ public class MapRJobTrackerClusterActionHandler
     long cldbIP = Long.MAX_VALUE;
 
     instances = cluster.getInstancesMatching (
-        RolePredicates.role(MapRCldbClusterActionHandler.CldbRole));
+        RolePredicates.role(MapRCldbClusterActionHandler.CLDB_ROLE));
     for (Cluster.Instance inst: instances) {
       InetAddress pAddr = inst.getPrivateAddress();
       long ip = MapRCommon.ipToLong(pAddr.getAddress());

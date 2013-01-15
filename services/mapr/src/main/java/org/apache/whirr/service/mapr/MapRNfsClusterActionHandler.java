@@ -13,11 +13,11 @@ public class MapRNfsClusterActionHandler extends MapRCldbClusterActionHandler {
   private static final Logger LOG =
     LoggerFactory.getLogger(MapRNfsClusterActionHandler.class);
 
-  public static final String NfsRole = "mapr-nfs";
+  public static final String NFS_ROLE = "mapr-nfs";
 
   @Override
   public String getRole() {
-    return NfsRole;
+    return NFS_ROLE;
   }
 
   @Override
@@ -25,7 +25,7 @@ public class MapRNfsClusterActionHandler extends MapRCldbClusterActionHandler {
           throws IOException, InterruptedException {
     LOG.info("NFSHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, NfsRole);
+    MapRCommon.addCommonActions(this, event, NFS_ROLE);
 
     LOG.info("NFSHandler: beforeBootstrap(): End");
   }

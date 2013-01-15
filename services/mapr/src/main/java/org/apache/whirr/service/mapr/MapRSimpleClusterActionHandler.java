@@ -5,15 +5,12 @@ import java.net.InetAddress;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.whirr.net.DnsUtil;
-import org.apache.whirr.service.Cluster;
-import org.apache.whirr.service.Cluster.Instance;
+import org.apache.whirr.net.FastDnsResolver;
+import org.apache.whirr.Cluster;
+import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.service.ClusterActionHandlerSupport;
-import org.apache.whirr.service.ClusterSpec;
-import org.apache.whirr.service.ComputeServiceContextBuilder;
-import org.apache.whirr.service.jclouds.FirewallSettings;
-import org.jclouds.compute.ComputeServiceContext;
+import org.apache.whirr.ClusterSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,21 +18,22 @@ public class MapRSimpleClusterActionHandler extends ClusterActionHandlerSupport 
   private static final Logger LOG =
     LoggerFactory.getLogger(MapRSimpleClusterActionHandler.class);
 
-  public static final String SimpleRole = "mapr-simple";
+  public static final String SIMPLE_ROLE = "mapr-simple";
 
   private InetAddress cldbPublicAddress = null;
 
   @Override
   public String getRole() {
-    return SimpleRole;
+    return SIMPLE_ROLE;
   }
 
   @Override
   protected void beforeBootstrap(ClusterActionEvent event)
           throws IOException, InterruptedException {
     LOG.info("MapRSimpleHandler: beforeBootstrap(): Begin");
+    
 
-    MapRCommon.addCommonActions(this, event, SimpleRole);
+    MapRCommon.addCommonActions(this, event, SIMPLE_ROLE);
 
     LOG.info("MapRSimpleHandler: beforeBootstrap(): End");
   }
@@ -71,37 +69,6 @@ public class MapRSimpleClusterActionHandler extends ClusterActionHandlerSupport 
     // Now do the firewall config from HadoopNameNodeClusterActionHandler
     LOG.info("MapRSimpleHandler: Authorizing firewall");
 
-    ComputeServiceContext computeServiceContext =
-      ComputeServiceContextBuilder.build(clusterSpec);
-
-    // web ui
-    if (! MapRCommon.hasInstanceOf(event,
-              MapRWebServerClusterActionHandler.WebServerRole)) {
-      FirewallSettings.authorizeIngress (computeServiceContext, cldbInstance,
-        clusterSpec, //cldbPublicAddress.getHostAddress(),
-            MapRCommon.WEB_PORT);
-    }
-
-    // cldb
-    if (! MapRCommon.hasInstanceOf(event, MapRCldbClusterActionHandler.CldbRole)) {
-      FirewallSettings.authorizeIngress(computeServiceContext, cldbInstance,
-        clusterSpec,//  cldbPublicAddress.getHostAddress(),
-              MapRCommon.NAMENODE_WEB_UI_PORT);
-      FirewallSettings.authorizeIngress(computeServiceContext, cldbInstance,
-        clusterSpec, // cldbPublicAddress.getHostAddress(),
-              MapRCommon.NAMENODE_PORT);
-    }
-
-    // jobtracker
-    if (! MapRCommon.hasInstanceOf(event,
-            MapRJobTrackerClusterActionHandler.JobTrackerRole)) {
-      FirewallSettings.authorizeIngress(computeServiceContext, cldbInstance,
-        clusterSpec, // cldbPublicAddress.getHostAddress(),
-              MapRCommon.JOBTRACKER_WEB_UI_PORT);
-      FirewallSettings.authorizeIngress(computeServiceContext, cldbInstance,
-        clusterSpec, // cldbPublicAddress.getHostAddress(),
-              MapRCommon.JOBTRACKER_PORT);
-    }
 
     MapRCommon.writeConfigureScript (
             clusterSpec,
@@ -126,8 +93,9 @@ public class MapRSimpleClusterActionHandler extends ClusterActionHandlerSupport 
     LOG.info("MapRSimpleHandler: Completed configuration of {}",
             clusterSpec.getClusterName());
 
+    FastDnsResolver fdr = new FastDnsResolver();
     LOG.info("MapRSimpleHandler: Web UI available at https://{}:{}",
-        DnsUtil.resolveAddress(cldbPublicAddress.getHostAddress()),
+        fdr.apply(cldbPublicAddress.getHostAddress()),
             MapRCommon.WEB_PORT);
 
     Properties config = MapRCommon.createClientSideProperties(

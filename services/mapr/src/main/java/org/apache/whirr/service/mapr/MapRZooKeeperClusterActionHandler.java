@@ -14,11 +14,11 @@ public class MapRZooKeeperClusterActionHandler
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRZooKeeperClusterActionHandler.class);
 
-  public static final String ZookeeperRole = "mapr-zookeeper";
+  public static final String ZOOKEEPER_ROLE = "mapr-zookeeper";
 
   @Override
   public String getRole() {
-    return ZookeeperRole;
+    return ZOOKEEPER_ROLE;
   }
 
   @Override
@@ -26,7 +26,7 @@ public class MapRZooKeeperClusterActionHandler
           throws IOException, InterruptedException {
     LOG.info("ZooKeeperHandler: beforeBootstrap(): Begin");
 
-    MapRCommon.addCommonActions(this, event, ZookeeperRole);
+    MapRCommon.addCommonActions(this, event, ZOOKEEPER_ROLE);
 
     LOG.info("ZooKeeperHandler: beforeBootstrap(): End");
   }

@@ -1,0 +1,10 @@
+org.apache.whirr.service.mapr.MapRSimpleClusterActionHandler
+org.apache.whirr.service.mapr.MapRCldbClusterActionHandler
+org.apache.whirr.service.mapr.MapRFileServerClusterActionHandler
+org.apache.whirr.service.mapr.MapRJobTrackerClusterActionHandler
+org.apache.whirr.service.mapr.MapRTaskTrackerClusterActionHandler
+org.apache.whirr.service.mapr.MapRNfsClusterActionHandler
+org.apache.whirr.service.mapr.MapRZooKeeperClusterActionHandler
+org.apache.whirr.service.mapr.MapRWebServerClusterActionHandler
+org.apache.whirr.service.mapr.MapRHbaseMasterClusterActionHandler
+org.apache.whirr.service.mapr.MapRHbaseRegionServerClusterActionHandler

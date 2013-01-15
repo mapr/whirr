@@ -49,6 +49,7 @@
     <module>services/yarn</module>
     <module>services/zookeeper</module>
     <module>services/hbase</module>
+    <module>services/mapr</module>
     <module>services/elasticsearch</module>
     <module>services/hama</module>
     <module>services/puppet</module>

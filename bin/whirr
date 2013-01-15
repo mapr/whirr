@@ -60,6 +60,14 @@ else
   CLASSPATH="$BIN/../conf/:$BIN/..:$BIN/../lib/*"
 fi
 
+BASEMAPR=${MAPR_HOME:-/opt/mapr}
+env=${BASEMAPR}/conf/env.sh
+[ -f $env ] && . $env
+if [ ! -z $JAVA_HOME ]; then
+   export PATH=$JAVA_HOME/bin:$PATH
+fi
+
+
 # Java classpath doesn't understand cygwin paths, thus converting the CLASSPATH into 
 # Windows style path.
 if $cygwin; then 

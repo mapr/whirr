@@ -421,6 +421,7 @@
             <exclude>**/BUILD.txt</exclude>
             <exclude>**/CHANGES.txt</exclude>
             <exclude>**/NOTICE-src.txt</exclude>
+            <exclude>**/readme.md</exclude>
             <exclude>.git/**</exclude>
             <exclude>.gitignore</exclude>
             <exclude>**/*.json</exclude>

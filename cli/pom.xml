@@ -92,6 +92,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>whirr-mapr</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>whirr-hama</artifactId>
       <version>${project.version}</version>
     </dependency>

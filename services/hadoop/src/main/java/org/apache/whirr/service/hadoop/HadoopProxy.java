@@ -44,7 +44,7 @@ public class HadoopProxy {
     this.cluster = cluster;
   }
   
-  public String[] getProxyCommand() throws IOException {
+  public String[] getProxyCommand(InetAddress nameNodeIP) throws IOException {
     checkState(clusterSpec.getPrivateKeyFile() != null ||
           clusterSpec.getPrivateKey() != null, "privateKey is needed");
     File identity = clusterSpec.getPrivateKeyFile();
@@ -55,7 +55,8 @@ public class HadoopProxy {
     }
     KeyPair.setPermissionsTo600(identity);
     String user = clusterSpec.getClusterUser();
-    InetAddress namenode = HadoopCluster.getNamenodePublicAddress(cluster);
+    InetAddress namenode = nameNodeIP == null ? 
+      HadoopCluster.getNamenodePublicAddress(cluster) : nameNodeIP;
     String server = namenode.getHostAddress();
 
     return new String[] { "ssh",
@@ -68,6 +69,10 @@ public class HadoopProxy {
         "-N",
         "-D 6666",
         String.format("%s@%s", user, server)};
+  }
+
+  public String[] getProxyCommand() throws IOException {
+    return getProxyCommand(null);
   }
 
   public void start() throws IOException {

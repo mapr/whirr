@@ -57,6 +57,7 @@ import org.jclouds.compute.options.RunScriptOptions;
 import static org.jclouds.compute.options.RunScriptOptions.Builder.overrideLoginCredentials;
 import org.jclouds.domain.LoginCredentials;
 import org.jclouds.scriptbuilder.domain.Statement;
+import org.jclouds.scriptbuilder.domain.Statements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +103,7 @@ public abstract class ScriptBasedClusterAction extends ClusterAction {
         continue; // skip execution if this group of instances is not in target
       }
       StatementBuilder statementBuilder = new StatementBuilder();
+      statementBuilder.addStatement(Statements.call("install_runurl"));
 
       ComputeServiceContext computeServiceContext = getCompute().apply(clusterSpec);
       FirewallManager firewallManager = new FirewallManager(

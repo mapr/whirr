@@ -21,9 +21,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>7</version>
+    <groupId>com.mapr</groupId>
+    <artifactId>mapr-root</artifactId>
+    <version>1.0</version>
   </parent>
 
   <groupId>org.apache.whirr</groupId>
@@ -42,13 +42,14 @@
     <module>core</module>
     <module>examples</module>
     <module>services/cassandra</module>
-    <module>services/cdh</module>
-    <module>services/cdh-oldtests</module>
+    <!-- module>services/cdh</module -->
+    <!-- module>services/cdh-oldtests</module-->
     <module>services/ganglia</module>
     <module>services/hadoop</module>
     <module>services/yarn</module>
     <module>services/zookeeper</module>
     <module>services/hbase</module>
+    <module>services/mapr</module>
     <module>services/elasticsearch</module>
     <module>services/hama</module>
     <module>services/puppet</module>
@@ -420,6 +421,7 @@
             <exclude>**/BUILD.txt</exclude>
             <exclude>**/CHANGES.txt</exclude>
             <exclude>**/NOTICE-src.txt</exclude>
+            <exclude>**/readme.md</exclude>
             <exclude>.git/**</exclude>
             <exclude>.gitignore</exclude>
             <exclude>**/*.json</exclude>
@@ -435,6 +437,10 @@
             <exclude>**/.checkstyle</exclude>
             <exclude>**/target/**</exclude>
             <exclude>**/atlassian-ide-plugin.xml</exclude>
+            <exclude>**/mapr-recipes/**</exclude>
+            <exclude>src/main/java/org/apache/whirr/service/mapr/**</exclude>
+            <exclude>src/main/resources/META-INF/services/**</exclude>
+            <exclude>services/mapr/**/**</exclude>
             <exclude>src/site/resources/images/whirr-logo.ai</exclude>
             <!-- binary -->
           </excludes>

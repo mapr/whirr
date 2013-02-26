@@ -21,41 +21,46 @@ package org.apache.whirr.service.mapr;
 import java.io.IOException;
 
 import org.apache.whirr.Cluster;
-// import org.apache.whirr.Cluster.Instance;
 import org.apache.whirr.ClusterSpec;
+import org.apache.whirr.RolePredicates;
 import org.apache.whirr.service.ClusterActionEvent;
+import org.apache.whirr.service.FirewallManager.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-public class MapRTaskTrackerClusterActionHandler extends MapRClusterActionHandler {
+public class MapRNFSClusterActionHandler extends MapRClusterActionHandler {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(MapRTaskTrackerClusterActionHandler.class);
-    
-  public static final String ROLE = "mapr-tasktracker";
+      LoggerFactory.getLogger(MapRNFSClusterActionHandler.class);
+
+  public static final String ROLE = "mapr-nfs";
   
   @Override
   public String getRole() {
     return ROLE;
   }
-
-  @Override
-  protected void doBeforeConfigure(ClusterActionEvent event) 
-  throws IOException {
-    ClusterSpec clusterSpec = event.getClusterSpec();
-    Cluster cluster = event.getCluster();
-
-    LOG.info("Beginning (no-op) configuration of {} role {}", clusterSpec.getClusterName(), getRole());
-  }
-
+  
   @Override
   protected void afterConfigure(ClusterActionEvent event) throws IOException {
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
     
-    LOG.info("Completed (no-op) configuration of {} role {}", clusterSpec.getClusterName(), getRole());
+        /* Poor man's firewall setting ... default to the cluster launcher
+         * only with access to the cluster.
+         * Add ' .source("0.0.0.0/0")' to Rule.create() if you need 
+         * absolute openness.
+         *
+         * NOTE: For this class only, the Firewall settings are done at the end
+         * of the configuration phase, since it's not likely that the web port is needed
+         * any earlier than that.
+         */
+    event.getFirewallManager().addRules(
+        Rule.create()
+          .destination(RolePredicates.role(ROLE))
+          .ports(MapRCluster.NFS_PORT, MapRCluster.RPCBIND_PORT)
+    );
+    
+    LOG.info("Completed configuration of {} role {}", clusterSpec.getClusterName(), getRole());
   }
   
 }

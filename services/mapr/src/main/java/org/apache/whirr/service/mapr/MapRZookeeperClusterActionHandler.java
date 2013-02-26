@@ -20,6 +20,7 @@ package org.apache.whirr.service.mapr;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Properties;
 import java.util.Set;
 
 import com.google.common.collect.Iterables;
@@ -33,12 +34,12 @@ import org.apache.whirr.service.FirewallManager.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MapRJobTrackerClusterActionHandler extends MapRClusterActionHandler {
+public class MapRZookeeperClusterActionHandler extends MapRClusterActionHandler {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(MapRJobTrackerClusterActionHandler.class);
-    
-  public static final String ROLE = "mapr-jobtracker";
+    LoggerFactory.getLogger(MapRZookeeperClusterActionHandler.class);
+  
+  public static final String ROLE = "mapr-zookeeper";
   
   @Override
   public String getRole() {
@@ -49,31 +50,26 @@ public class MapRJobTrackerClusterActionHandler extends MapRClusterActionHandler
   protected void doBeforeConfigure(ClusterActionEvent event) throws IOException {
     Cluster cluster = event.getCluster();
     
-    Set<Cluster.Instance> jtInstances =
+    Set<Cluster.Instance> cldbInstances =
         cluster.getInstancesMatching(RolePredicates.role(
-                  MapRJobTrackerClusterActionHandler.ROLE));
+                  MapRCLDBClusterActionHandler.ROLE));
 
-    if (jtInstances == null) {
-        jtInstances =
+    if (cldbInstances == null) {
+        cldbInstances =
             cluster.getInstancesMatching(RolePredicates.role(
                   MapRMRMasterClusterActionHandler.ROLE));
     } else {
-        jtInstances.addAll(
+        cldbInstances.addAll(
             cluster.getInstancesMatching(RolePredicates.role(
                   MapRMRMasterClusterActionHandler.ROLE)));
     }
 
-        /* Not sure this is the right firewall setup here ... since 
-         * external systems don't need access to JobTracker port
-         */
-    Instance jobtracker = Iterables.getFirst(jtInstances, null);
+        /* Should set up firewall here ... but not sure how */
+    Instance cldbnode = Iterables.getFirst(cldbInstances, null);
     event.getFirewallManager().addRules(
         Rule.create()
-          .destination(RolePredicates.role(MapRJobTrackerClusterActionHandler.ROLE))
-          .ports(MapRCluster.JOBTRACKER_PORT),
-        Rule.create()
-          .destination(RolePredicates.role(MapRMRMasterClusterActionHandler.ROLE))
-          .ports(MapRCluster.JOBTRACKER_PORT)
+          .destination(cldbInstances)
+          .port(MapRCluster.ZOOKEEPER_PORT)
     );
     
   }
@@ -83,10 +79,18 @@ public class MapRJobTrackerClusterActionHandler extends MapRClusterActionHandler
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
     
+    // TODO: wait for TTs to come up (done in test for the moment)
+    
     LOG.info("Completed configuration of {} role {}", clusterSpec.getClusterName(), getRole());
-
+    InetAddress cldbPublicAddress = MapRCluster.getCLDBPublicAddress(cluster);
     InetAddress jobtrackerPublicAddress = MapRCluster.getJobTrackerPublicAddress(cluster);
 
+    Properties config = createClientSideProperties(clusterSpec, cldbPublicAddress, jobtrackerPublicAddress);
+    createClientSideHadoopSiteFile(clusterSpec, config);
+    Properties combined = new Properties();
+    combined.putAll(cluster.getConfiguration());
+    combined.putAll(config);
+    event.setCluster(new Cluster(cluster.getInstances(), combined));
   }
-  
+
 }

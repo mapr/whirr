@@ -1,73 +1,66 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.whirr.service.mapr;
 
-import com.google.common.base.Joiner;
+import java.io.IOException;
+
+
 import org.apache.whirr.Cluster;
-import org.apache.whirr.service.ClusterActionEvent;
 import org.apache.whirr.ClusterSpec;
 import org.apache.whirr.RolePredicates;
+import org.apache.whirr.service.ClusterActionEvent;
+import org.apache.whirr.service.FirewallManager.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Set;
+public class MapRWebServerClusterActionHandler extends MapRClusterActionHandler {
 
-/**
- * Copyright (c) 2009 & onwards. MapR Tech, Inc., All rights reserved
- */
-public class MapRWebServerClusterActionHandler
-              extends MapRCldbClusterActionHandler {
   private static final Logger LOG =
       LoggerFactory.getLogger(MapRWebServerClusterActionHandler.class);
 
-  public static final String WEB_SERVER_ROLE = "mapr-webserver";
-  private boolean configuredFirewall = false;
-
+  public static final String ROLE = "mapr-webserver";
+  
   @Override
   public String getRole() {
-    return WEB_SERVER_ROLE;
+    return ROLE;
   }
 
   @Override
-  protected void beforeBootstrap(ClusterActionEvent event)
-          throws IOException, InterruptedException {
-    LOG.info("WebServerHandler: beforeBootstrap(): Begin");
-
-    MapRCommon.addCommonActions(this, event, WEB_SERVER_ROLE);
-
-    LOG.info("WebServerHandler: beforeBootstrap(): End");
-  }
-
-  @Override
-  protected void beforeConfigure(ClusterActionEvent event)
-          throws IOException, InterruptedException {
-    LOG.info("WebServerHandler: beforeConfigure(): Begin");
-
-    super.beforeConfigure(event, false); // dont add firewall settings
-
+  protected void afterConfigure(ClusterActionEvent event) throws IOException {
     ClusterSpec clusterSpec = event.getClusterSpec();
     Cluster cluster = event.getCluster();
-
-    // Now add webserver to firewall settings
-    if (! configuredFirewall) {
-      configuredFirewall = true;
-
-      Set<Cluster.Instance> wsInstances =
-              cluster.getInstancesMatching(RolePredicates.role(WEB_SERVER_ROLE));
-
-      String wsPubServers = Joiner.on(',').join(
-              MapRCommon.getPublicIps(wsInstances));
-
-      LOG.info("WebServerHandler: Authorizing firewall for WebServer(s): {}",
-              wsPubServers);
-
-    }
-
-    LOG.info("WebServerHandler: beforeConfigure(): End");
+    
+        /* Poor man's firewall setting ... let everyone access WEB_PORT from outside cluster 
+         * change to ' .source("0.0.0.0/0")'  if you need absolute openness.
+         *
+         * NOTE: For this class only, the Firewall settings are done at the end
+         * of the configuration phase, since it's not likely that the web port is needed
+         * any earlier than that.
+         */
+    event.getFirewallManager().addRules(
+        Rule.create()
+          .destination(RolePredicates.role(ROLE))
+          .port(MapRCluster.WEB_PORT)
+    );
+    
+    LOG.info("Completed configuration of {} role {}", clusterSpec.getClusterName(), getRole());
   }
-
-  @Override
-  protected void afterConfigure (ClusterActionEvent event)
-          throws IOException, InterruptedException {
-    // empty don't set up the client-side proxy stuff
-  }
+  
 }
+

@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.whirr</groupId>
     <artifactId>whirr</artifactId>
-    <version>0.8.1</version>
+    <version>0.8.1-mapr</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <groupId>org.apache.whirr</groupId>
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>whirr-cdh</artifactId>
-      <version>${project.version}</version>
+      <version>0.8.1</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
